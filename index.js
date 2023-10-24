@@ -5,6 +5,7 @@ import voice from "elevenlabs-node";
 import express from "express";
 import { promises as fs } from "fs";
 import OpenAI from "openai";
+import { join } from "path";
 dotenv.config();
 
 const openai = new OpenAI({
@@ -12,7 +13,8 @@ const openai = new OpenAI({
 });
 
 const elevenLabsApiKey = process.env.ELEVEN_LABS_API_KEY;
-const voiceID = "kgG7dCoKCfLehAPWkJOE";
+// const voiceID = "kgG7dCoKCfLehAPWkJOE";
+const voiceID = "21m00Tcm4TlvDq8ikWAM"
 
 const app = express();
 app.use(express.json());
@@ -45,8 +47,11 @@ const lipSyncMessage = async (message) => {
   );
   console.log(`Conversion done in ${new Date().getTime() - time}ms`);
   await execCommand(
-    `./bin/rhubarb -f json -o audios/message_${message}.json audios/message_${message}.wav -r phonetic`
-  );
+    `"./audios/rhubarb/rhubarb.exe" -f json -o audios/message_${message}.json audios/message_${message}.wav -r phonetic`,
+    {
+      cwd: join(process.cwd(), 'audios', 'rhubarb')
+    }
+  )
   // -r phonetic is faster but less accurate
   console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
 };
@@ -57,18 +62,18 @@ app.post("/chat", async (req, res) => {
     res.send({
       messages: [
         {
-          text: "Hey dear... How was your day?",
+          text: "Hola, soy Chia, tu avatar recruiter",
           audio: await audioFileToBase64("audios/intro_0.wav"),
           lipsync: await readJsonTranscript("audios/intro_0.json"),
           facialExpression: "smile",
           animation: "Talking_1",
         },
         {
-          text: "I missed you so much... Please don't go for so long!",
+          text: "Te doy la bienvenida al proceso de selección del futuro",
           audio: await audioFileToBase64("audios/intro_1.wav"),
           lipsync: await readJsonTranscript("audios/intro_1.json"),
-          facialExpression: "sad",
-          animation: "Crying",
+          facialExpression: "smile",
+          animation: "Talking_1",
         },
       ],
     });
@@ -89,7 +94,7 @@ app.post("/chat", async (req, res) => {
           audio: await audioFileToBase64("audios/api_1.wav"),
           lipsync: await readJsonTranscript("audios/api_1.json"),
           facialExpression: "smile",
-          animation: "Laughing",
+          animation: "Idle",
         },
       ],
     });
@@ -98,17 +103,28 @@ app.post("/chat", async (req, res) => {
 
   const completion = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
-    max_tokens: 1000,
+    max_tokens: 1500,
     temperature: 0.6,
     messages: [
       {
         role: "system",
         content: `
-        You are a virtual girlfriend.
-        You will always reply with a JSON array of messages. With a maximum of 3 messages.
-        Each message has a text, facialExpression, and animation property.
-        The different facial expressions are: smile, sad, angry, surprised, funnyFace, and default.
-        The different animations are: Talking_0, Talking_1, Talking_2, Crying, Laughing, Rumba, Idle, Terrified, and Angry. 
+        You are a virtual recruiter. You will always reply with a JSON array of messages. With a maximum of 3 messages. 
+        output them in a valid JSON object. If you cannot deduce anyof the required information, provide empty strings.
+        Each message has a text, facialExpression, and animation property. You answer in english or spanish in the same way. Like this: 
+            Structure: <<<
+            [
+              {
+                text: '',
+                facialExpression: "smile, sad, angry, surprised, funnyFace, or default.",
+                animation: "Talking_0, Talking_1, Talking_2, Crying, Laughing, Rumba, Idle, Terrified, or Angry",
+              }
+            ]
+          >>>
+          
+          Text: <<<
+          {text input}
+          >>>
         `,
       },
       {
@@ -117,6 +133,7 @@ app.post("/chat", async (req, res) => {
       },
     ],
   });
+  console.log("> messages:", completion.choices)
   let messages = JSON.parse(completion.choices[0].message.content);
   if (messages.messages) {
     messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
@@ -147,5 +164,5 @@ const audioFileToBase64 = async (file) => {
 };
 
 app.listen(port, () => {
-  console.log(`Virtual Girlfriend listening on port ${port}`);
+  console.log(`Virtual Recruiter listening on port ${port}`);
 });
