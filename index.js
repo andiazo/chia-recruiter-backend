@@ -14,7 +14,7 @@ const openai = new OpenAI({
 
 const elevenLabsApiKey = process.env.ELEVEN_LABS_API_KEY;
 // const voiceID = "kgG7dCoKCfLehAPWkJOE";
-const voiceID = "21m00Tcm4TlvDq8ikWAM"
+const voiceID = "21m00Tcm4TlvDq8ikWAM";
 
 const app = express();
 app.use(express.json());
@@ -42,23 +42,119 @@ const lipSyncMessage = async (message) => {
   const time = new Date().getTime();
   console.log(`Starting conversion for message ${message}`);
   await execCommand(
-    `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav`
+    `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav`,
     // -y to overwrite the file
   );
   console.log(`Conversion done in ${new Date().getTime() - time}ms`);
   await execCommand(
     `"./audios/rhubarb/rhubarb.exe" -f json -o audios/message_${message}.json audios/message_${message}.wav -r phonetic`,
     {
-      cwd: join(process.cwd(), 'audios', 'rhubarb')
-    }
-  )
+      cwd: join(process.cwd(), "audios", "rhubarb"),
+    },
+  );
   // -r phonetic is faster but less accurate
   console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
 };
 
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
-  if (!userMessage) {
+
+  const questions = {
+    alentti: {
+      text: "alentti",
+      audio: await audioFileToBase64("audios/alentti.wav"),
+      lipsync: await readJsonTranscript("audios/alentti.json"),
+      facialExpression: "smile",
+      animation: "Talking_1",
+    },
+    question1: {
+      text: "Qué te motiva más de tu profesión?",
+      audio: await audioFileToBase64("audios/question1.wav"),
+      lipsync: await readJsonTranscript("audios/question1.json"),
+      facialExpression: "smile",
+      animation: "Talking_0",
+    },
+    question2: {
+      text: "Hola, soy Chia, tu avatar recruiter",
+      audio: await audioFileToBase64("audios/question2.wav"),
+      lipsync: await readJsonTranscript("audios/question2.json"),
+      facialExpression: "smile",
+      animation: "Talking_1",
+    },
+    question3: {
+      text: "Hola, soy Chia, tu avatar recruiter",
+      audio: await audioFileToBase64("audios/question3.wav"),
+      lipsync: await readJsonTranscript("audios/question3.json"),
+      facialExpression: "smile",
+      animation: "Talking_2",
+    },
+    question4: {
+      text: "Hola, soy Chia, tu avatar recruiter",
+      audio: await audioFileToBase64("audios/question4.wav"),
+      lipsync: await readJsonTranscript("audios/question4.json"),
+      facialExpression: "smile",
+      animation: "Talking_0",
+    },
+    question5: {
+      text: "Hola, soy Chia, tu avatar recruiter",
+      audio: await audioFileToBase64("audios/question5.wav"),
+      lipsync: await readJsonTranscript("audios/question5.json"),
+      facialExpression: "smile",
+      animation: "Talking_1",
+    },
+    question6: {
+      text: "Hola, soy Chia, tu avatar recruiter",
+      audio: await audioFileToBase64("audios/question6.wav"),
+      lipsync: await readJsonTranscript("audios/question6.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question0: {
+      text: "hola diana y equipo de recaudo. Soy chia y quiero ser parte de tu equipo de reclutamiento, estar disponible 24 7 y mejorar la experiencia de los candidatos.",
+      audio: await audioFileToBase64("audios/saludoRecaudo.wav"),
+      lipsync: await readJsonTranscript("audios/saludoRecaudo.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question8: {
+      text: "Hola equipo de Scotiabank, soy Chia, tu avatar recruiter. Y les doy la bienvenida al proceso de selección del futuro",
+      audio: await audioFileToBase64("audios/saludoScotia.wav"),
+      lipsync: await readJsonTranscript("audios/saludoScotia.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    // Recaudo
+    question12: {
+      text: "¿Puedes compartir una experiencia en la que hayas trabajado de manera colaborativa para lograr un objetivo común?",
+      audio: await audioFileToBase64("audios/question12.wav"),
+      lipsync: await readJsonTranscript("audios/question12.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question13: {
+      text: "¿Cómo te aseguras de alinear tus metas individuales con los objetivos más amplios de la organización?",
+      audio: await audioFileToBase64("audios/question13.wav"),
+      lipsync: await readJsonTranscript("audios/question13.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question14: {
+      text: "¿Qué significa para ti un ambiente de trabajo sano y condiciones favorables? ¿Cómo contribuyes a mantenerlo?",
+      audio: await audioFileToBase64("audios/question14.wav"),
+      lipsync: await readJsonTranscript("audios/question14.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+  };
+
+  if (questions[userMessage]) {
+    res.send({
+      messages: [questions[userMessage]],
+    });
+    return;
+  }
+
+  if (!userMessage || userMessage == "saludo") {
     res.send({
       messages: [
         {
@@ -121,7 +217,7 @@ app.post("/chat", async (req, res) => {
               }
             ]
           >>>
-          
+
           Text: <<<
           {text input}
           >>>
@@ -133,7 +229,7 @@ app.post("/chat", async (req, res) => {
       },
     ],
   });
-  console.log("> messages:", completion.choices)
+  console.log("> messages:", completion.choices);
   let messages = JSON.parse(completion.choices[0].message.content);
   if (messages.messages) {
     messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
