@@ -58,7 +58,7 @@ const lipSyncMessage = async (message) => {
 
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
-
+  // console.log("chat called");
   const questions = {
     alentti: {
       text: "alentti",
@@ -142,6 +142,48 @@ app.post("/chat", async (req, res) => {
       text: "¿Qué significa para ti un ambiente de trabajo sano y condiciones favorables? ¿Cómo contribuyes a mantenerlo?",
       audio: await audioFileToBase64("audios/question14.wav"),
       lipsync: await readJsonTranscript("audios/question14.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question15: {
+      text: "",
+      audio: await audioFileToBase64("audios/question15.wav"),
+      lipsync: await readJsonTranscript("audios/question15.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question16: {
+      text: "",
+      audio: await audioFileToBase64("audios/question16.wav"),
+      lipsync: await readJsonTranscript("audios/question16.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question17: {
+      text: "",
+      audio: await audioFileToBase64("audios/question17.wav"),
+      lipsync: await readJsonTranscript("audios/question17.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question18: {
+      text: "",
+      audio: await audioFileToBase64("audios/question18.wav"),
+      lipsync: await readJsonTranscript("audios/question18.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question19: {
+      text: "",
+      audio: await audioFileToBase64("audios/question19.wav"),
+      lipsync: await readJsonTranscript("audios/question19.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question20: {
+      text: "",
+      audio: await audioFileToBase64("audios/question20.wav"),
+      lipsync: await readJsonTranscript("audios/question20.json"),
       facialExpression: "smile",
       animation: "Idle",
     },
