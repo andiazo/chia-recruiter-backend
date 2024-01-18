@@ -20,6 +20,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 const port = 3000;
+// const port = 3001;
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -187,6 +188,27 @@ app.post("/chat", async (req, res) => {
       facialExpression: "smile",
       animation: "Idle",
     },
+    question21: {
+      text: "",
+      audio: await audioFileToBase64("audios/question21.wav"),
+      lipsync: await readJsonTranscript("audios/question21.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    question22: {
+      text: "",
+      audio: await audioFileToBase64("audios/question22.wav"),
+      lipsync: await readJsonTranscript("audios/question22.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+    introrecaudo: {
+      text: "",
+      audio: await audioFileToBase64("audios/introrecaudo.wav"),
+      lipsync: await readJsonTranscript("audios/introrecaudo.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    }
   };
 
   if (questions[userMessage]) {
