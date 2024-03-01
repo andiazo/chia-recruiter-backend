@@ -21,6 +21,13 @@ app.use(express.json());
 app.use(cors());
 const port = 3000;
 // const port = 3001;
+const animations = {
+  "Idle": "Idle",
+};
+
+const facialExpressions = {
+  "smile": "smile",
+};
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -56,53 +63,26 @@ const lipSyncMessage = async (message) => {
   // -r phonetic is faster but less accurate
   console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
 };
-
-const animations = {
-  "Talking_0": "Talking_0",
-  "Talking_1": "Talking_1",
-  "Talking_2": "Talking_2",
-  "Idle": "Idle",
-  // "Terrified": "Terrified",
-  // "Crying": "Crying",
-  // "Angry": "Angry",
-};
-const facialExpressions = {
-  "smile": "smile",
-  // "sad": "sad",
-  // "angry": "angry",
-  // "surprised": "surprised",
-  // "funnyFace": "funnyFace",
-  // "default": "default",
-};
-
-const questions = {
-  alentti: {
-    text: "alentti",
-    audio: await audioFileToBase64("audios/alentti.wav"),
-    lipsync: await readJsonTranscript("audios/alentti.json"),
-    facialExpression: "smile",
-    animation: "Talking_1",
-  },
-  
-  introrecaudo: {
-    text: "",
-    audio: await audioFileToBase64("audios/introrecaudo.wav"),
-    lipsync: await readJsonTranscript("audios/introrecaudo.json"),
-    facialExpression: "smile",
-    animation: "Idle",
-  },
-};
-
-// Elementos dinámicos
-const dynamicQuestions = [
-  "question1",
-  "question2",
-  "question3",
-  
-];
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
   console.log("chat called");
+  const questions = {
+    alentti: {
+      text: "alentti",
+      audio: await audioFileToBase64("audios/alentti.wav"),
+      lipsync: await readJsonTranscript("audios/alentti.json"),
+      facialExpression: "smile",
+      animation: "Talking_1",
+    },
+    
+    introrecaudo: {
+      text: "",
+      audio: await audioFileToBase64("audios/introrecaudo.wav"),
+      lipsync: await readJsonTranscript("audios/introrecaudo.json"),
+      facialExpression: "smile",
+      animation: "Idle",
+    },
+  };
   
   // const questions = {
   //   alentti: {
@@ -254,21 +234,64 @@ app.post("/chat", async (req, res) => {
   //     animation: "Idle",
   //   }
   // };
-  dynamicQuestions.forEach(async (dynamicQuestion) => {
-    questions[dynamicQuestion] = {
-      text: dynamicQuestion,
-      audio: await audioFileToBase64(`audios/${dynamicQuestion}.wav`),
-      lipsync: await readJsonTranscript(`audios/${dynamicQuestion}.json`),
-      facialExpression: "sad",
-      animation: "Talking_0", // Ajustar según sea necesario
-    };
-  });
-  if (questions[userMessage]) {
+  // dynamicQuestions.forEach(async (dynamicQuestion) => {
+  //   questions[dynamicQuestion] = 
+  //   {
+  //     text: dynamicQuestion,
+  //     audio: await audioFileToBase64(`audios/${dynamicQuestion}.wav`),
+  //     lipsync: await readJsonTranscript(`audios/${dynamicQuestion}.json`),
+  //     facialExpression: "sad",
+  //     animation: "Talking_0", // Ajustar según sea necesario
+  //   };
+  // });
+
+  if (userMessage) {
+    console.log("userMessage", userMessage )
+  try{
+    const audio = await audioFileToBase64(`audios/${userMessage}.wav`)
+    const lipsync = await readJsonTranscript(`audios/${userMessage}.json`)
+    if (audio && lipsync) {
+      res.send({
+        
+      messages: [{
+      text: "",
+      audio: audio,
+      lipsync: lipsync, 
+      animation: "Talking_1",
+      }]
+      })
+
+      }
+    else{
+      res.send({
+        messages: [{
+          text: "Hola, soy Chia, tu avatar recruiter",
+          audio: await audioFileToBase64("audios/intro_0.wav"),
+          lipsync: await readJsonTranscript("audios/intro_0.json"),
+          facialExpression: facialExpressions["smile"],
+          animation: animations["Idle"],
+        }],
+      });
+    }
+
+  }
+  catch(e){
     res.send({
-      messages: [questions[userMessage]],
-    });
+      messages: [{
+        text: "Hola, soy Chia, tu avatar recruiter",
+        audio: await audioFileToBase64("audios/intro_0.wav"),
+        lipsync: await readJsonTranscript("audios/intro_0.json"),
+        facialExpression: "smile",
+        animation: "Talking_1",
+      }],
+    });  
+    }
+
+    
     return;
   }
+  
+
 
   if (!userMessage || userMessage == "saludo") {
     res.send({
@@ -366,13 +389,23 @@ app.post("/chat", async (req, res) => {
 });
 
 const readJsonTranscript = async (file) => {
+  try{
   const data = await fs.readFile(file, "utf8");
   return JSON.parse(data);
+  }
+  catch(e){
+    return null
+  }
 };
 
 const audioFileToBase64 = async (file) => {
+  try{
   const data = await fs.readFile(file);
   return data.toString("base64");
+  }
+  catch(e){
+    return null
+  }
 };
 
 app.listen(port, () => {
