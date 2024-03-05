@@ -13,20 +13,14 @@ dotenv.config();
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "-", // Your OpenAI API key here, I used "-" to avoid errors when the key is not set but you should not do that
 });
-
 const elevenLabsApiKey = process.env.ELEVEN_LABS_API_KEY;
-
-
-// const voiceID = "21m00Tcm4TlvDq8ikWAM";
 const voiceID = "z9fAnlkpzviPz146aGWa";
 const voice = new ElevenLabs({apiKey: elevenLabsApiKey, voiceId: voiceID});
-console.log(">voice:",voice)
-
 const app = express();
 app.use(express.json());
 app.use(cors());
 const port = 3000;
-// const port = 3001;
+
 const animations = {
   "Idle": "Idle",
 };
@@ -43,69 +37,9 @@ app.get("/voices", async (req, res) => {
   res.send(await voice.getVoices(elevenLabsApiKey));
 });
 
-const execCommand = (command) => {
-  return new Promise((resolve, reject) => {
-    exec(command, (error, stdout, stderr) => {
-      if (error) reject(error);
-      resolve(stdout);
-    });
-  });
-};
-
-const lipSyncMessage = async (message) => {
-  const time = new Date().getTime();
-  console.log(`Starting conversion for message ${message}`);
-  await execCommand(
-    `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav`,
-    // -y to overwrite the file
-  );
-  console.log(`Conversion done in ${new Date().getTime() - time}ms`);
-  await execCommand(
-    `"./audios/rhubarb/rhubarb.exe" -f json -o audios/message_${message}.json audios/message_${message}.wav -r phonetic`,
-    {
-      cwd: join(process.cwd(), "audios", "rhubarb"),
-    },
-  );
-  // -r phonetic is faster but less accurate
-  console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
-};
-
-const lipSyncMessageV2 = async (id) => {
-  const time = new Date().getTime();
-  console.log(`Starting conversion for question ${id}`);
-  try{
-
-    await execCommand(
-      `ffmpeg -y -i audios/question${id}.mp3 audios/question${id}.wav`,
-      // -y to overwrite the file
-    );
-    console.log(`Conversion done in ${new Date().getTime() - time}ms`);
-    // await execCommand(
-    //   `"./audios/rhubarb/rhubarb.exe" -f json -o audios/question${id}.json audios/question${id}.wav -r phonetic`,
-    //   {
-    //     cwd: join(process.cwd(), "audios", "rhubarb"),
-    //   },
-    // );
-    await execCommand(
-      `"audios/rhubarb-macOS/rhubarb" -f json -o audios/question${id}.json audios/question${id}.wav -r phonetic`,
-      {
-        cwd: join(process.cwd(), "audios", "rhubarb"),
-      },
-    );
-    console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
-
-  }
-  catch(e){
-    console.log(e)
-  }
-  
-  // -r phonetic is faster but less accurate
-  
-};
-
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
-  console.log("chat called");
+  
   const questions = {
     alentti: {
       text: "alentti",
@@ -247,17 +181,17 @@ app.post("/chat", async (req, res) => {
       },
     ],
   });
-  console.log("> messages:", completion.choices);
+  // console.log("> messages:", completion.choices);
   let messages = JSON.parse(completion.choices[0].message.content);
-  console.log("> messages:", messages); 
+  // console.log("> messages:", messages); 
   if (messages.messages) {
-    messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
+    messages = messages.messages;
   }
   for (let i = 0; i < messages.length; i++) {
     const message = messages[i];
     // generate audio file
-    const fileName = `audios/message_${i}.mp3`; // The name of your audio file
-    const textInput = message.text; // The text you wish to convert to speech
+    const fileName = `audios/message_${i}.mp3`;
+    const textInput = message.text;
     await voice.textToSpeech(elevenLabsApiKey, voiceID, fileName, textInput);
     // generate lipsync
     await lipSyncMessage(i);
@@ -270,36 +204,84 @@ app.post("/chat", async (req, res) => {
 
 
 app.post("/createVoices", async (req, res) => {
-  console.log(req.body.message.question)
-  console.log(req.body.message.id)
+  // console.log(req.body.message.question)
+  // console.log(req.body.message.id)
   const message = req.body.message.question;
   const id = req.body.message.id;
-  const fileName = `audios/question${id}.mp3`; // The name of your audio file
-  const textInput = message; // The text you wish to convert to speech
+  const fileName = `audios/question${id}.mp3`;
+  const textInput = message;
   const modelId='eleven_multilingual_v1'
   try{
-
-    // const options = {
-    //   method: 'POST',
-    //   headers: {'Content-Type': 'application/json'},
-    //   body: `{"model_id":"eleven_multilingual_v1","text":${textInput}}`
-    // };
-    
-    // fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceID}`, options)
-    //   .then(response => response.json())
-    //   .then(response => console.log(response))
-    //   .catch(err => console.error(err));
-
     await voice.textToSpeech({fileName, textInput, modelId});
     await lipSyncMessageV2(id);
     res.send({message:`Voices created successfully for question ${id}`});
   }
   catch(e){
-    console.log(e)
+    
     res.status(500).send({message:`Error creating voices for question ${id}`});
   } 
 
 });
+
+const execCommand = (command) => {
+  return new Promise((resolve, reject) => {
+    exec(command, (error, stdout, stderr) => {
+      if (error) reject(error);
+      resolve(stdout);
+    });
+  });
+};
+
+const lipSyncMessage = async (message) => {
+  const time = new Date().getTime();
+  // console.log(`Starting conversion for message ${message}`);
+  await execCommand(
+    `ffmpeg -y -i audios/message_${message}.mp3 audios/message_${message}.wav`,
+    // -y to overwrite the file
+  );
+  // console.log(`Conversion done in ${new Date().getTime() - time}ms`);
+  await execCommand(
+    `"./audios/rhubarb/rhubarb.exe" -f json -o audios/message_${message}.json audios/message_${message}.wav -r phonetic`,
+    {
+      cwd: join(process.cwd(), "audios", "rhubarb"),
+    },
+  );
+  // -r phonetic is faster but less accurate
+  // console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
+};
+
+const lipSyncMessageV2 = async (id) => {
+  const time = new Date().getTime();
+  // console.log(`Starting conversion for question ${id}`);
+  try{
+
+    await execCommand(
+      `ffmpeg -y -i audios/question${id}.mp3 audios/question${id}.wav`,
+      // -y to overwrite the file
+    );
+    // console.log(`Conversion done in ${new Date().getTime() - time}ms`);
+    // await execCommand(
+    //   `"./audios/rhubarb/rhubarb.exe" -f json -o audios/question${id}.json audios/question${id}.wav -r phonetic`,
+    //   {
+    //     cwd: join(process.cwd(), "audios", "rhubarb"),
+    //   },
+    // );
+    await execCommand(
+      `"audios/rhubarb-macOS/rhubarb" -f json -o audios/question${id}.json audios/question${id}.wav -r phonetic`,
+      {
+        cwd: join(process.cwd(), "audios", "rhubarb"),
+      },
+    );
+    // console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
+
+  }
+  catch(e){
+    console.log(e)
+  }
+  
+  // -r phonetic is faster but less accurate
+  
+};
 const readJsonTranscript = async (file) => {
   try{
   const data = await fs.readFile(file, "utf8");
