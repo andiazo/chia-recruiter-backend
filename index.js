@@ -1,11 +1,13 @@
 import { exec } from "child_process";
 import cors from "cors";
 import dotenv from "dotenv";
-import voice from "elevenlabs-node";
+import ElevenLabs from "elevenlabs-node";
 import express from "express";
 import { promises as fs } from "fs";
 import OpenAI from "openai";
 import { join } from "path";
+import fetch from 'node-fetch';
+
 dotenv.config();
 
 const openai = new OpenAI({
@@ -13,8 +15,12 @@ const openai = new OpenAI({
 });
 
 const elevenLabsApiKey = process.env.ELEVEN_LABS_API_KEY;
-// const voiceID = "kgG7dCoKCfLehAPWkJOE";
-const voiceID = "21m00Tcm4TlvDq8ikWAM";
+
+
+// const voiceID = "21m00Tcm4TlvDq8ikWAM";
+const voiceID = "z9fAnlkpzviPz146aGWa";
+const voice = new ElevenLabs({apiKey: elevenLabsApiKey, voiceId: voiceID});
+console.log(">voice:",voice)
 
 const app = express();
 app.use(express.json());
@@ -63,6 +69,40 @@ const lipSyncMessage = async (message) => {
   // -r phonetic is faster but less accurate
   console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
 };
+
+const lipSyncMessageV2 = async (id) => {
+  const time = new Date().getTime();
+  console.log(`Starting conversion for question ${id}`);
+  try{
+
+    await execCommand(
+      `ffmpeg -y -i audios/question${id}.mp3 audios/question${id}.wav`,
+      // -y to overwrite the file
+    );
+    console.log(`Conversion done in ${new Date().getTime() - time}ms`);
+    // await execCommand(
+    //   `"./audios/rhubarb/rhubarb.exe" -f json -o audios/question${id}.json audios/question${id}.wav -r phonetic`,
+    //   {
+    //     cwd: join(process.cwd(), "audios", "rhubarb"),
+    //   },
+    // );
+    await execCommand(
+      `"audios/rhubarb-macOS/rhubarb" -f json -o audios/question${id}.json audios/question${id}.wav -r phonetic`,
+      {
+        cwd: join(process.cwd(), "audios", "rhubarb"),
+      },
+    );
+    console.log(`Lip sync done in ${new Date().getTime() - time}ms`);
+
+  }
+  catch(e){
+    console.log(e)
+  }
+  
+  // -r phonetic is faster but less accurate
+  
+};
+
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
   console.log("chat called");
@@ -84,167 +124,6 @@ app.post("/chat", async (req, res) => {
     },
   };
   
-  // const questions = {
-  //   alentti: {
-  //     text: "alentti",
-  //     audio: await audioFileToBase64("audios/alentti.wav"),
-  //     lipsync: await readJsonTranscript("audios/alentti.json"),
-  //     facialExpression: "smile",
-  //     animation: "Talking_1",
-  //   },
-  //   question1: {
-  //     text: "Qué te motiva más de tu profesión?",
-  //     audio: await audioFileToBase64("audios/question1.wav"),
-  //     lipsync: await readJsonTranscript("audios/question1.json"),
-  //     facialExpression: "smile",
-  //     animation: "Talking_0",
-  //   },
-  //   question2: {
-  //     text: "Hola, soy Chia, tu avatar recruiter",
-  //     audio: await audioFileToBase64("audios/question2.wav"),
-  //     lipsync: await readJsonTranscript("audios/question2.json"),
-  //     facialExpression: "smile",
-  //     animation: "Talking_1",
-  //   },
-  //   question3: {
-  //     text: "Hola, soy Chia, tu avatar recruiter",
-  //     audio: await audioFileToBase64("audios/question3.wav"),
-  //     lipsync: await readJsonTranscript("audios/question3.json"),
-  //     facialExpression: "smile",
-  //     animation: "Talking_2",
-  //   },
-  //   question4: {
-  //     text: "Hola, soy Chia, tu avatar recruiter",
-  //     audio: await audioFileToBase64("audios/question4.wav"),
-  //     lipsync: await readJsonTranscript("audios/question4.json"),
-  //     facialExpression: "smile",
-  //     animation: "Talking_0",
-  //   },
-  //   question5: {
-  //     text: "Hola, soy Chia, tu avatar recruiter",
-  //     audio: await audioFileToBase64("audios/question5.wav"),
-  //     lipsync: await readJsonTranscript("audios/question5.json"),
-  //     facialExpression: "smile",
-  //     animation: "Talking_1",
-  //   },
-  //   question6: {
-  //     text: "Hola, soy Chia, tu avatar recruiter",
-  //     audio: await audioFileToBase64("audios/question6.wav"),
-  //     lipsync: await readJsonTranscript("audios/question6.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question0: {
-  //     text: "hola diana y equipo de recaudo. Soy chia y quiero ser parte de tu equipo de reclutamiento, estar disponible 24 7 y mejorar la experiencia de los candidatos.",
-  //     audio: await audioFileToBase64("audios/saludoRecaudo.wav"),
-  //     lipsync: await readJsonTranscript("audios/saludoRecaudo.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question8: {
-  //     text: "Hola equipo de Scotiabank, soy Chia, tu avatar recruiter. Y les doy la bienvenida al proceso de selección del futuro",
-  //     audio: await audioFileToBase64("audios/saludoScotia.wav"),
-  //     lipsync: await readJsonTranscript("audios/saludoScotia.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   // Recaudo
-  //   question12: {
-  //     text: "¿Puedes compartir una experiencia en la que hayas trabajado de manera colaborativa para lograr un objetivo común?",
-  //     audio: await audioFileToBase64("audios/question12.wav"),
-  //     lipsync: await readJsonTranscript("audios/question12.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question13: {
-  //     text: "¿Cómo te aseguras de alinear tus metas individuales con los objetivos más amplios de la organización?",
-  //     audio: await audioFileToBase64("audios/question13.wav"),
-  //     lipsync: await readJsonTranscript("audios/question13.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question14: {
-  //     text: "¿Qué significa para ti un ambiente de trabajo sano y condiciones favorables? ¿Cómo contribuyes a mantenerlo?",
-  //     audio: await audioFileToBase64("audios/question14.wav"),
-  //     lipsync: await readJsonTranscript("audios/question14.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question15: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question15.wav"),
-  //     lipsync: await readJsonTranscript("audios/question15.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question16: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question16.wav"),
-  //     lipsync: await readJsonTranscript("audios/question16.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question17: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question17.wav"),
-  //     lipsync: await readJsonTranscript("audios/question17.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question18: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question18.wav"),
-  //     lipsync: await readJsonTranscript("audios/question18.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question19: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question19.wav"),
-  //     lipsync: await readJsonTranscript("audios/question19.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question20: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question20.wav"),
-  //     lipsync: await readJsonTranscript("audios/question20.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question21: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question21.wav"),
-  //     lipsync: await readJsonTranscript("audios/question21.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   question22: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/question22.wav"),
-  //     lipsync: await readJsonTranscript("audios/question22.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   },
-  //   introrecaudo: {
-  //     text: "",
-  //     audio: await audioFileToBase64("audios/introrecaudo.wav"),
-  //     lipsync: await readJsonTranscript("audios/introrecaudo.json"),
-  //     facialExpression: "smile",
-  //     animation: "Idle",
-  //   }
-  // };
-  // dynamicQuestions.forEach(async (dynamicQuestion) => {
-  //   questions[dynamicQuestion] = 
-  //   {
-  //     text: dynamicQuestion,
-  //     audio: await audioFileToBase64(`audios/${dynamicQuestion}.wav`),
-  //     lipsync: await readJsonTranscript(`audios/${dynamicQuestion}.json`),
-  //     facialExpression: "sad",
-  //     animation: "Talking_0", // Ajustar según sea necesario
-  //   };
-  // });
-
   if (userMessage) {
     console.log("userMessage", userMessage )
   try{
@@ -370,6 +249,7 @@ app.post("/chat", async (req, res) => {
   });
   console.log("> messages:", completion.choices);
   let messages = JSON.parse(completion.choices[0].message.content);
+  console.log("> messages:", messages); 
   if (messages.messages) {
     messages = messages.messages; // ChatGPT is not 100% reliable, sometimes it directly returns an array and sometimes a JSON object with a messages property
   }
@@ -388,6 +268,38 @@ app.post("/chat", async (req, res) => {
   res.send({ messages });
 });
 
+
+app.post("/createVoices", async (req, res) => {
+  console.log(req.body.message.question)
+  console.log(req.body.message.id)
+  const message = req.body.message.question;
+  const id = req.body.message.id;
+  const fileName = `audios/question${id}.mp3`; // The name of your audio file
+  const textInput = message; // The text you wish to convert to speech
+  const modelId='eleven_multilingual_v1'
+  try{
+
+    // const options = {
+    //   method: 'POST',
+    //   headers: {'Content-Type': 'application/json'},
+    //   body: `{"model_id":"eleven_multilingual_v1","text":${textInput}}`
+    // };
+    
+    // fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceID}`, options)
+    //   .then(response => response.json())
+    //   .then(response => console.log(response))
+    //   .catch(err => console.error(err));
+
+    await voice.textToSpeech({fileName, textInput, modelId});
+    await lipSyncMessageV2(id);
+    res.send({message:`Voices created successfully for question ${id}`});
+  }
+  catch(e){
+    console.log(e)
+    res.status(500).send({message:`Error creating voices for question ${id}`});
+  } 
+
+});
 const readJsonTranscript = async (file) => {
   try{
   const data = await fs.readFile(file, "utf8");
