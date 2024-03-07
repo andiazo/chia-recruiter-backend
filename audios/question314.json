@@ -1,0 +1,12 @@
+{
+  "metadata": {
+    "soundFile": "/Users/byepesg/Documents/Metatalentum/backend/chia-recruiter-backend/audios/question314.wav",
+    "duration": 0.86
+  },
+  "mouthCues": [
+    { "start": 0.00, "end": 0.20, "value": "X" },
+    { "start": 0.20, "end": 0.33, "value": "F" },
+    { "start": 0.33, "end": 0.75, "value": "B" },
+    { "start": 0.75, "end": 0.86, "value": "X" }
+  ]
+}

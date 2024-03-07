@@ -8,6 +8,7 @@ import OpenAI from "openai";
 import { join } from "path";
 import fetch from 'node-fetch';
 
+
 dotenv.config();
 
 const openai = new OpenAI({
@@ -20,6 +21,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 const port = 3000;
+const stability = 0.5;
+const similarityBoost = 0.75;
 
 const animations = {
   "Idle": "Idle",
@@ -212,9 +215,10 @@ app.post("/createVoices", async (req, res) => {
   const textInput = message;
   const modelId='eleven_multilingual_v1'
   try{
-    await voice.textToSpeech({fileName, textInput, modelId});
+    await voice.textToSpeech({fileName, textInput, modelId,stability,similarityBoost});
     await lipSyncMessageV2(id);
-    res.send({message:`Voices created successfully for question ${id}`});
+    res.status(201).send({message:`Voices created successfully for question ${id}`});
+
   }
   catch(e){
     

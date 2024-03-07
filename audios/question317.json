@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "soundFile": "/Users/byepesg/Documents/Metatalentum/backend/chia-recruiter-backend/audios/question317.wav",
+    "duration": 0.86
+  },
+  "mouthCues": [
+    { "start": 0.00, "end": 0.01, "value": "X" },
+    { "start": 0.01, "end": 0.06, "value": "A" },
+    { "start": 0.06, "end": 0.20, "value": "D" },
+    { "start": 0.20, "end": 0.24, "value": "C" },
+    { "start": 0.24, "end": 0.43, "value": "B" },
+    { "start": 0.43, "end": 0.71, "value": "C" },
+    { "start": 0.71, "end": 0.86, "value": "X" }
+  ]
+}
